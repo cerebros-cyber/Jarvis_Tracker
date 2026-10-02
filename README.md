@@ -1,6 +1,6 @@
 # Mitarbeit im Blick
 
-Web-App für das iPad auf dem Lehrerpult: Die Klasse erscheint als Sitzplan mit Fotos, und du erfasst die mündliche Mitarbeit mit einem Fingertipp.
+Web-App für das iPad auf dem Lehrerpult: Die Klasse erscheint als Sitzplan mit Fotos, und du erfasst die mündliche Mitarbeit mit einem Fingertipp. Das Design folgt den NGG-Mathematik-Präsentationen (Rot #DC3545, Dunkel #1D1D1B, Grautöne, Kopf- und Fußzeile wie im Folienmaster).
 
 | Geste auf dem Schülerbild | Bedeutung |
 |---|---|
@@ -13,7 +13,7 @@ Web-App für das iPad auf dem Lehrerpult: Die Klasse erscheint als Sitzplan mit 
 
 - **Mehrere Klassen**, umschaltbar oben links.
 - **Sitzplan** mit frei wählbarer Zahl an Reihen und Plätzen. Schüler antippen und dann einen Platz antippen, um sie umzusetzen oder zu tauschen. „Ansicht drehen“ wechselt zwischen Blick vom Pult und Blick von hinten.
-- **Fotos** direkt mit der iPad-Kamera aufnehmen oder aus der Fotomediathek wählen. Ohne Foto erscheinen die Initialen.
+- **Fotos** einzeln beim Schüler (Kamera oder Fotomediathek) oder **gesammelt hochladen** (siehe unten). Ohne Foto erscheinen die Initialen.
 - **Namensliste einfügen**: Klassenliste kopieren und einfügen, ein Name pro Zeile.
 - **Stunden** beginnen automatisch mit dem ersten Eintrag. Nach 60 Minuten ohne Eintrag (einstellbar) beginnt die nächste Stunde von selbst; „Stunde beenden“ schließt sie sofort ab.
 - **Rückgängig** für versehentliche Eingaben.
@@ -26,6 +26,17 @@ Web-App für das iPad auf dem Lehrerpult: Die Klasse erscheint als Sitzplan mit 
 - **Punkte** pro Ereignis einstellbar (Standard: Meldung 1, guter Beitrag 2, schwach −1).
 - **Datensicherung** als Datei exportieren und wieder importieren.
 - Funktioniert **offline**. Der Bildschirm bleibt während der Stunde an.
+
+## Schülerfotos hochladen
+
+Im Reiter **Sitzplan → „Fotos hochladen“** kannst du viele Fotos auf einmal auswählen (auf dem iPad aus der Fotomediathek oder der Dateien-App).
+
+- **Automatische Zuordnung über den Dateinamen:** Heißt eine Datei wie der Schüler, wird sie direkt zugeordnet. Groß-/Kleinschreibung, Reihenfolge und Umlaute spielen keine Rolle: `Lena Albrecht.jpg`, `albrecht_lena.png`, `Becker, Jonas.jpg` oder `krueger-noah.jpg` werden erkannt. Ein eindeutiger Vorname reicht ebenfalls.
+- **Der Reihe nach zuordnen:** Fotos ohne passenden Namen (z. B. `IMG_1234`) werden den Schülern ohne Foto in Sitzplan-Reihenfolge zugeteilt, von vorne links nach hinten rechts. Fotografierst du die Klasse in Sitzreihenfolge, passt das sofort.
+- Jede Zuordnung lässt sich vor dem Übernehmen per Auswahlliste ändern. Zu Fotos mit Namen kannst du auch **neue Schüler anlegen** lassen.
+- Am Mac oder PC kannst du Fotos auch per Drag-and-drop auf die Seite ziehen, ein einzelnes Foto direkt auf einen Schüler.
+
+Die Fotos werden quadratisch zugeschnitten und verkleinert gespeichert (ca. 20–30 KB pro Bild).
 
 ## Auf dem iPad einrichten
 
