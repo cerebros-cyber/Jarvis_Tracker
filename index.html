@@ -1,0 +1,1173 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mitarbeit">
+<meta name="theme-color" content="#2b4740">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<title>Mitarbeit im Blick</title>
+<style>
+  :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+</style>
+</head>
+<body>
+<!--APP-START-->
+<title>Mitarbeit im Blick</title>
+<style>
+/* Layout: one-screen app — chalkboard header, seating plan fills the rest; stats scroll inside main. */
+:root {
+  --bg: #e9eeeb;
+  --surface: #ffffff;
+  --surface-2: #f4f7f5;
+  --ink: #1c2826;
+  --muted: #5d6d69;
+  --line: #d3dcd8;
+  --board: #2b4740;
+  --board-ink: #eef3ec;
+  --board-muted: #a9bdb5;
+  --accent: #2c6d5f;
+  --m: #2c6cb3;
+  --g: #23894a;
+  --n: #cf5a23;
+  --danger: #b3261e;
+  --shadow: 0 1px 2px rgba(20, 40, 35, .08), 0 2px 8px rgba(20, 40, 35, .06);
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: ui-rounded, "SF Pro Rounded", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius: 14px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121817; --surface: #1c2422; --surface-2: #232c2a; --ink: #e4ebe8; --muted: #98a8a3;
+    --line: #34413e; --board: #182925; --board-ink: #e6eee9; --board-muted: #8aa39a; --accent: #6cc0aa;
+    --m: #6aa6ec; --g: #57c47c; --n: #f08a55; --danger: #ff8a80;
+    --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121817; --surface: #1c2422; --surface-2: #232c2a; --ink: #e4ebe8; --muted: #98a8a3;
+  --line: #34413e; --board: #182925; --board-ink: #e6eee9; --board-muted: #8aa39a; --accent: #6cc0aa;
+  --m: #6aa6ec; --g: #57c47c; --n: #f08a55; --danger: #ff8a80;
+  --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+}
+html { height: 100%; box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  height: 100%; margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font); font-size: 15px; line-height: 1.4;
+  -webkit-text-size-adjust: 100%; overflow: hidden;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+#app { height: 100%; display: flex; flex-direction: column; }
+
+/* Header */
+.top {
+  background: var(--board); color: var(--board-ink);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px max(16px, env(safe-area-inset-left, 0px)) 10px max(16px, env(safe-area-inset-right, 0px));
+}
+.brand { font-family: var(--font-display); font-weight: 700; letter-spacing: .01em; font-size: 17px; white-space: nowrap; }
+.brand small { display: block; font-weight: 500; font-size: 11px; color: var(--board-muted); letter-spacing: .08em; text-transform: uppercase; }
+.classsel {
+  appearance: none; -webkit-appearance: none; background: rgba(255,255,255,.1); color: var(--board-ink);
+  border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 8px 34px 8px 12px; font-weight: 600; font-size: 16px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 17px) 55%, calc(100% - 12px) 55%; background-size: 5px 5px; background-repeat: no-repeat;
+  max-width: 260px;
+}
+.classsel option { color: #1c2826; background: #fff; }
+.tabs { display: flex; background: rgba(0,0,0,.18); border-radius: 11px; padding: 3px; gap: 2px; margin-left: auto; }
+.tabs button {
+  border: 0; background: transparent; color: var(--board-muted); padding: 7px 14px; border-radius: 8px; font-weight: 600;
+}
+.tabs button[aria-selected="true"] { background: var(--board-ink); color: var(--board); }
+.iconbtn {
+  border: 0; background: transparent; color: var(--board-ink); width: 40px; height: 40px; border-radius: 10px;
+  display: grid; place-items: center;
+}
+.iconbtn:hover { background: rgba(255,255,255,.1); }
+.iconbtn svg { width: 22px; height: 22px; }
+
+main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px 16px 14px; }
+main.scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* Generic controls */
+.btn {
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 10px; padding: 8px 14px; font-weight: 600; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn.danger { color: var(--danger); }
+.btn.small { padding: 5px 10px; font-size: 13px; }
+.seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 2px; flex-wrap: wrap; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 8px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.spacer { flex: 1; }
+.hint { color: var(--muted); font-size: 13px; }
+.banner {
+  background: var(--surface); border: 1px dashed var(--line); border-radius: 10px;
+  padding: 8px 12px; font-size: 13px; color: var(--muted); margin-bottom: 10px;
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.banner.warn { border-color: var(--danger); color: var(--danger); }
+
+/* Lesson bar */
+.lessonbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.lessoninfo { display: flex; flex-direction: column; min-width: 0; }
+.lessoninfo strong { font-size: 16px; font-variant-numeric: tabular-nums; }
+.lessoninfo span { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.legend { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.lg { font-size: 12px; padding: 4px 9px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.lg i { font-style: normal; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; background: var(--muted); }
+.lg.m i { background: var(--m); } .lg.g i { background: var(--g); } .lg.n i { background: var(--n); }
+
+/* Seating plan */
+.plan { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.boardlabel {
+  align-self: center; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+  border-top: 3px solid var(--line); padding-top: 3px; width: min(320px, 60%); text-align: center;
+}
+.plan.flip .boardlabel { order: -1; border-top: 0; border-bottom: 3px solid var(--line); padding: 0 0 3px; }
+.grid {
+  flex: 1; min-height: 0; display: grid; gap: clamp(4px, .8vw, 10px);
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
+}
+.lesson .grid { touch-action: none; }
+.seat {
+  container-type: size; position: relative; min-width: 0; min-height: 0;
+  border-radius: var(--radius); user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.seat.empty { border: 1.5px dashed var(--line); }
+.seat.stu {
+  background: var(--surface); box-shadow: var(--shadow); border: 1.5px solid transparent;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px;
+  transition: transform .12s ease-out, background-color .2s;
+}
+.seat .ph {
+  width: min(58cqh, 72cqw); aspect-ratio: 1; border-radius: 50%; overflow: hidden; flex: none;
+  display: grid; place-items: center; background: hsl(var(--h, 160) 30% 82%);
+  color: hsl(var(--h, 160) 35% 26%); font-family: var(--font-display); font-weight: 700; font-size: min(20cqh, 26cqw);
+}
+.seat .ph img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; display: block; }
+.seat .nm {
+  font-weight: 600; font-size: clamp(11px, min(13cqh, 10cqw), 18px); line-height: 1.15;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
+}
+.cnt { position: absolute; top: 5px; right: 5px; display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
+.cnt b {
+  min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; color: #fff; font-size: 13px; font-weight: 700;
+  display: grid; place-items: center; font-variant-numeric: tabular-nums;
+}
+.cnt .m { background: var(--m); } .cnt .g { background: var(--g); } .cnt .n { background: var(--n); }
+.seat.absent { opacity: .38; }
+.seat.absent::after {
+  content: "abwesend"; position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%);
+  font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted);
+}
+.seat.pending { border-color: var(--m); }
+.seat.swipe-arm { background: color-mix(in srgb, var(--n) 22%, var(--surface)); border-color: var(--n); }
+.seat.sel { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); }
+.edit .seat.empty { display: grid; place-items: center; color: var(--muted); cursor: pointer; }
+.edit .seat.empty::before { content: "+"; font-size: 22px; opacity: .5; }
+.edit .seat.empty.target { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.edit .seat.stu { cursor: pointer; }
+
+@keyframes ring { from { box-shadow: 0 0 0 0 var(--fx); } to { box-shadow: 0 0 0 14px transparent; } }
+@keyframes rise { 0% { opacity: 0; transform: translate(-50%, 0) scale(.8); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -38px) scale(1); } }
+.seat.fx { animation: ring .6s ease-out; }
+.fxlabel {
+  position: absolute; left: 50%; top: 30%; pointer-events: none; white-space: nowrap;
+  background: var(--fx); color: #fff; font-weight: 700; font-size: 13px; padding: 3px 9px; border-radius: 999px;
+  animation: rise .9s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) { .seat.fx { animation: none; } .fxlabel { animation-duration: 1.2s; } .seat.stu { transition: none; } }
+
+/* Edit */
+.tray { border-top: 1px solid var(--line); padding-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.tray .chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px;
+  background: var(--surface); border: 1.5px solid var(--line); font-weight: 600; font-size: 13px;
+}
+.tray .chip.sel { border-color: var(--accent); }
+.tray .chip .ph { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; overflow: hidden; font-size: 11px; font-weight: 700;
+  background: hsl(var(--h, 160) 30% 82%); color: hsl(var(--h, 160) 35% 26%); }
+.tray .chip .ph img { width: 100%; height: 100%; object-fit: cover; }
+.stepper { display: inline-flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 2px 4px; }
+.stepper button { border: 0; background: transparent; width: 30px; height: 30px; border-radius: 8px; font-size: 18px; font-weight: 700; color: var(--accent); }
+.stepper span { min-width: 22px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stepper label { font-size: 13px; color: var(--muted); padding: 0 4px; }
+.selbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--surface); border: 1.5px solid var(--accent);
+  border-radius: 10px; padding: 6px 10px; margin-bottom: 10px;
+}
+
+/* Stats */
+.summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.tile { background: var(--surface); border-radius: 12px; padding: 10px 12px; box-shadow: var(--shadow); min-width: 0; }
+.tile .v { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; font-family: var(--font-display); }
+.tile .k { font-size: 12px; color: var(--muted); }
+.tile.m .v { color: var(--m); } .tile.g .v { color: var(--g); } .tile.n .v { color: var(--n); }
+.tablewrap { overflow-x: auto; background: var(--surface); border-radius: 12px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; position: sticky; top: 0; background: var(--surface); }
+th button { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; }
+th button[aria-sort] { color: var(--ink); }
+th:first-child, td:first-child, th.l, td.l { text-align: left; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--surface-2); }
+tr:last-child td { border-bottom: 0; }
+td.name { font-weight: 600; }
+td.name > div { display: flex; align-items: center; gap: 8px; }
+td.name .ph { width: 30px; height: 30px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; font-size: 11px; font-weight: 700; flex: none;
+  background: hsl(var(--h, 160) 30% 82%); color: hsl(var(--h, 160) 35% 26%); }
+td.name .ph img { width: 100%; height: 100%; object-fit: cover; }
+td.m { color: var(--m); } td.g { color: var(--g); } td.n { color: var(--n); }
+td.pts { font-weight: 700; }
+.bar { display: flex; height: 10px; width: 160px; border-radius: 5px; overflow: hidden; background: var(--surface-2); }
+.bar span { display: block; height: 100%; }
+.bar .m { background: var(--m); } .bar .g { background: var(--g); } .bar .n { background: var(--n); }
+.muted { color: var(--muted); }
+.statsplan .grid { height: max(420px, 62vh); flex: none; }
+.statsplan .seat.stu { cursor: pointer; }
+.statsplan .score { font-size: clamp(11px, 13cqh, 20px); font-weight: 700; font-variant-numeric: tabular-nums; }
+.statsplan .score small { font-weight: 500; color: var(--muted); }
+
+/* Dialogs */
+dialog {
+  border: 0; border-radius: 18px; padding: 0; background: var(--surface); color: var(--ink);
+  width: min(520px, calc(100vw - 32px)); max-height: calc(100% - 40px); box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+dialog::backdrop { background: rgba(10, 20, 18, .45); }
+.dlg { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+.dlg h2 { margin: 0; font-size: 19px; font-family: var(--font-display); text-wrap: balance; }
+.dlg .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.dlg .actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 13px; color: var(--muted); font-weight: 600; }
+.input { border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; background: var(--surface-2); width: 100%; }
+textarea.input { min-height: 180px; resize: vertical; }
+.bigph { width: 96px; height: 96px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; flex: none;
+  background: hsl(var(--h, 160) 30% 82%); color: hsl(var(--h, 160) 35% 26%); font-size: 32px; font-weight: 700; font-family: var(--font-display); }
+.bigph img { width: 100%; height: 100%; object-fit: cover; }
+.menuhead { display: flex; gap: 14px; align-items: center; }
+.menuhead .bigph { width: 64px; height: 64px; font-size: 22px; }
+.menugrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.menugrid button { border: 0; border-radius: 12px; padding: 14px 8px; font-weight: 700; color: #fff; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.menugrid button span { font-size: 22px; font-variant-numeric: tabular-nums; }
+.menugrid .m { background: var(--m); } .menugrid .g { background: var(--g); } .menugrid .n { background: var(--n); }
+.list { display: flex; flex-direction: column; gap: 6px; }
+.list .item { display: flex; gap: 8px; align-items: center; }
+.list .item .input { flex: 1; }
+.dtable { max-height: 46vh; overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
+.dtable th { background: var(--surface); }
+.dtable tbody tr { cursor: default; }
+.toast {
+  position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25); z-index: 50; max-width: calc(100vw - 32px); text-align: center;
+}
+.empty-state { margin: auto; text-align: center; max-width: 420px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.empty-state h2 { margin: 0; font-family: var(--font-display); }
+.fileinput { display: none; }
+
+@media (max-width: 720px) {
+  .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .legend { margin-left: 0; }
+  .tabs { margin-left: 0; }
+  .brand small { display: none; }
+  .cnt b { min-width: 16px; height: 16px; font-size: 10px; padding: 0 4px; }
+}
+</style>
+
+<div id="app">
+  <header class="top">
+    <div class="brand">Mitarbeit<small>im Blick</small></div>
+    <select id="classSel" class="classsel" aria-label="Klasse wählen"></select>
+    <nav class="tabs" role="tablist" aria-label="Ansicht">
+      <button role="tab" data-view="lesson">Stunde</button>
+      <button role="tab" data-view="stats">Auswertung</button>
+      <button role="tab" data-view="edit">Sitzplan</button>
+    </nav>
+    <button class="iconbtn" id="settingsBtn" aria-label="Einstellungen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </header>
+  <main id="main"></main>
+</div>
+
+<dialog id="dlg"><form method="dialog" class="dlg" id="dlgBody"></form></dialog>
+<dialog id="confirmDlg"><form method="dialog" class="dlg">
+  <h2 id="confirmTitle"></h2>
+  <p id="confirmText" style="margin:0"></p>
+  <div class="actions">
+    <button class="btn" value="cancel">Abbrechen</button>
+    <button class="btn primary" id="confirmOk" value="ok">OK</button>
+  </div>
+</form></dialog>
+<input type="file" accept="image/*" id="photoInput" class="fileinput">
+<input type="file" accept="application/json,.json" id="importInput" class="fileinput">
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- Helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const DAY = 864e5;
+const TYPES = {
+  m: { label: 'Meldung', plural: 'Meldungen', fx: '+ Meldung' },
+  g: { label: 'Guter Beitrag', plural: 'Gute Beiträge', fx: '+ Guter Beitrag' },
+  n: { label: 'Schwache Mitarbeit', plural: 'Schwache Mitarbeit', fx: '− Schwach' }
+};
+const SWIPE = 40;
+const fmtTime = ts => new Date(ts).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+const fmtDate = ts => new Date(ts).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: '2-digit' });
+const fmtNum = (x, d = 1) => x == null || !isFinite(x) ? '–' : x.toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
+const isoDay = ts => { const d = new Date(ts); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const hue = s => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+const initials = name => String(name).trim().split(/\s+/).filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+
+/* ---------- Storage (IndexedDB, falls back to memory) ---------- */
+const DB = {
+  db: null, mem: new Map(), ok: true,
+  async open() {
+    try {
+      this.db = await new Promise((res, rej) => {
+        const r = indexedDB.open('mitarbeit', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('kv');
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      });
+    } catch (e) { this.db = null; this.ok = false; }
+    try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+  },
+  req(mode, fn) {
+    return new Promise((res, rej) => {
+      const tx = this.db.transaction('kv', mode); const st = tx.objectStore('kv');
+      const r = fn(st);
+      tx.oncomplete = () => res(r && r.result);
+      tx.onerror = () => rej(tx.error);
+      tx.onabort = () => rej(tx.error);
+    });
+  },
+  get(k) { if (!this.db) return Promise.resolve(this.mem.get(k)); return this.req('readonly', s => s.get(k)); },
+  set(k, v) { if (!this.db) { this.mem.set(k, v); return Promise.resolve(); } return this.req('readwrite', s => { s.put(v, k); }); },
+  del(k) { if (!this.db) { this.mem.delete(k); return Promise.resolve(); } return this.req('readwrite', s => { s.delete(k); }); },
+  clear() { if (!this.db) { this.mem.clear(); return Promise.resolve(); } return this.req('readwrite', s => { s.clear(); }); },
+  async all(prefix) {
+    const out = new Map();
+    if (!this.db) { for (const [k, v] of this.mem) if (k.startsWith(prefix)) out.set(k, v); return out; }
+    await new Promise((res, rej) => {
+      const tx = this.db.transaction('kv', 'readonly');
+      const cur = tx.objectStore('kv').openCursor();
+      cur.onsuccess = () => { const c = cur.result; if (!c) return; if (String(c.key).startsWith(prefix)) out.set(c.key, c.value); c.continue(); };
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+    });
+    return out;
+  }
+};
+
+let D = null;              // persisted data
+const PH = new Map();      // studentId -> photo data URL
+const S = { view: 'lesson', editSel: null, undo: [], flashQ: [], dirty: false, sort: { k: 'pts', dir: -1 }, statsMode: 'table' };
+let saveTimer = null;
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(flush, 120); }
+function flush() {
+  clearTimeout(saveTimer);
+  DB.set('data', D).catch(() => { DB.ok = false; render(); });
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); else requestWake(); });
+window.addEventListener('pagehide', flush);
+
+function defaults() {
+  return { v: 1, classes: [], lessons: [], events: [], settings: { w: { m: 1, g: 2, n: -1 }, dbl: 320, autoMin: 60 }, ui: { classId: null, range: '30', from: '', to: '' } };
+}
+
+function sampleData() {
+  const d = defaults();
+  const names = ['Lena Albrecht', 'Jonas Becker', 'Mia Demir', 'Paul Engel', 'Emilia Fischer', 'Ben Graf', 'Hannah Hoffmann', 'Elias Ivanov',
+    'Sophie Jung', 'Noah Krüger', 'Lina Lehmann', 'Finn Maier', 'Clara Nowak', 'Leon Otto', 'Marie Peters', 'Luca Richter',
+    'Ella Schmidt', 'Anton Schulz', 'Ida Tran', 'Felix Vogel', 'Lea Wagner', 'Karl Yilmaz'];
+  const k = { id: uid(), name: '7b Deutsch (Beispiel)', rows: 4, cols: 6, flip: false, sample: true, students: [] };
+  names.forEach((n, i) => k.students.push({ id: uid(), name: n, r: Math.floor(i / 6), c: i % 6 }));
+  let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const p = k.students.map(() => rnd());
+  const now = Date.now();
+  [12, 9, 7, 5, 2].forEach(daysAgo => {
+    const start = new Date(now - daysAgo * DAY); start.setHours(8, 0, 0, 0);
+    const L = { id: uid(), c: k.id, start: +start, last: +start + 40 * 60000, absent: [], closed: true };
+    k.students.forEach((s, i) => {
+      if (rnd() < .06) { L.absent.push(s.id); return; }
+      const nM = Math.floor(rnd() * 5 * p[i]), nG = Math.floor(rnd() * 2.4 * p[i]), nN = rnd() < .14 ? 1 : 0;
+      const push = (t, n) => { for (let j = 0; j < n; j++) d.events.push({ id: uid(), c: k.id, s: s.id, t, ts: L.start + Math.floor(rnd() * 44) * 60000, l: L.id }); };
+      push('m', nM); push('g', nG); push('n', nN);
+    });
+    d.lessons.push(L);
+  });
+  d.classes.push(k);
+  d.ui.classId = k.id;
+  return d;
+}
+
+/* ---------- Model helpers ---------- */
+const cls = () => D.classes.find(c => c.id === D.ui.classId) || null;
+const stu = (k, sid) => k && k.students.find(s => s.id === sid);
+function lastLesson(cid) { let b = null; for (const l of D.lessons) if (l.c === cid && (!b || l.start > b.start)) b = l; return b; }
+function isStale(l) { const m = +D.settings.autoMin; return m > 0 && Date.now() - (l.last || l.start) > m * 60000; }
+function activeLesson(k) { const l = lastLesson(k.id); return l && !l.closed && !isStale(l) ? l : null; }
+function ensureLesson(k) {
+  let l = activeLesson(k);
+  if (!l) { const now = Date.now(); l = { id: uid(), c: k.id, start: now, last: now, absent: [] }; D.lessons.push(l); }
+  return l;
+}
+function counts(lessonIds) {
+  const m = new Map();
+  for (const e of D.events) {
+    if (!lessonIds.has(e.l)) continue;
+    let o = m.get(e.s); if (!o) m.set(e.s, o = { m: 0, g: 0, n: 0 });
+    o[e.t]++;
+  }
+  return m;
+}
+const points = o => o.m * D.settings.w.m + o.g * D.settings.w.g + o.n * D.settings.w.n;
+
+function avatar(k, s, cls = 'ph') {
+  const p = PH.get(s.id);
+  return `<span class="${cls}" style="--h:${hue(s.name)}">${p ? `<img src="${p}" alt="">` : esc(initials(s.name))}</span>`;
+}
+
+/* ---------- Actions ---------- */
+function record(sid, t) {
+  const k = cls(); if (!k || !stu(k, sid)) return;
+  const L = ensureLesson(k);
+  const ev = { id: uid(), c: k.id, s: sid, t, ts: Date.now(), l: L.id };
+  D.events.push(ev); L.last = ev.ts;
+  if (L.absent.includes(sid)) L.absent = L.absent.filter(x => x !== sid);
+  S.undo.push(ev.id); S.flashQ.push([sid, t]);
+  save();
+  if (G) S.dirty = true; else render();
+}
+function undo() {
+  const k = cls();
+  while (S.undo.length) {
+    const id = S.undo.pop();
+    const i = D.events.findIndex(e => e.id === id);
+    if (i < 0) continue;
+    const ev = D.events.splice(i, 1)[0];
+    save(); render();
+    toast(`Zurückgenommen: ${TYPES[ev.t].label} – ${esc((stu(k, ev.s) || {}).name || '')}`);
+    return;
+  }
+}
+function removeLastOf(sid) {
+  const k = cls(); const L = activeLesson(k); if (!L) return;
+  for (let i = D.events.length - 1; i >= 0; i--) {
+    const e = D.events[i];
+    if (e.l === L.id && e.s === sid) { D.events.splice(i, 1); save(); render(); toast(`Gelöscht: ${TYPES[e.t].label}`); return; }
+  }
+}
+function toggleAbsent(sid) {
+  const k = cls(); const L = ensureLesson(k);
+  if (L.absent.includes(sid)) L.absent = L.absent.filter(x => x !== sid); else L.absent.push(sid);
+  save(); render();
+}
+
+/* ---------- Gestures (lesson view) ---------- */
+let G = null, P = null;
+const main = $('#main');
+main.addEventListener('pointerdown', e => {
+  if (S.view !== 'lesson' || G) return;
+  const t = e.target.closest('.seat.stu'); if (!t) return;
+  e.preventDefault();
+  const sid = t.dataset.sid;
+  G = { sid, el: t, x: e.clientX, y: e.clientY, pid: e.pointerId, moved: false, long: false };
+  try { t.setPointerCapture(e.pointerId); } catch (err) {}
+  G.timer = setTimeout(() => {
+    if (!G || G.moved) return;
+    G.long = true;
+    flushPending();
+    openMenu(sid);
+  }, 520);
+});
+window.addEventListener('pointermove', e => {
+  if (!G || e.pointerId !== G.pid) return;
+  const dx = e.clientX - G.x, dy = e.clientY - G.y, d = Math.hypot(dx, dy);
+  if (d > 10) { G.moved = true; clearTimeout(G.timer); }
+  if (G.moved && !G.long) {
+    G.el.style.transform = `translate(${dx * .35}px, ${dy * .35}px)`;
+    G.el.classList.toggle('swipe-arm', d > SWIPE);
+  }
+});
+function endGesture(e, cancelled) {
+  if (!G || e.pointerId !== G.pid) return;
+  clearTimeout(G.timer);
+  const g = G; G = null;
+  g.el.style.transform = ''; g.el.classList.remove('swipe-arm');
+  if (!cancelled && !g.long) {
+    const d = Math.hypot(e.clientX - g.x, e.clientY - g.y);
+    if (d > SWIPE) { flushPending(); record(g.sid, 'n'); }
+    else tap(g.sid, g.el);
+  }
+  if (S.dirty) { S.dirty = false; render(); }
+}
+window.addEventListener('pointerup', e => endGesture(e, false));
+window.addEventListener('pointercancel', e => endGesture(e, true));
+main.addEventListener('contextmenu', e => { if (S.view === 'lesson') e.preventDefault(); });
+
+function tap(sid, el) {
+  if (P && P.sid === sid) { clearTimeout(P.timer); P = null; record(sid, 'g'); return; }
+  flushPending();
+  P = { sid, timer: setTimeout(flushPending, +D.settings.dbl || 320) };
+  el.classList.add('pending');
+}
+function flushPending() {
+  if (!P) return;
+  const sid = P.sid; clearTimeout(P.timer); P = null;
+  record(sid, 'm');
+}
+
+function runFlashes() {
+  const q = S.flashQ.splice(0);
+  for (const [sid, t] of q) {
+    const el = main.querySelector(`.seat.stu[data-sid="${sid}"]`); if (!el) continue;
+    el.style.setProperty('--fx', `var(--${t})`);
+    el.classList.remove('fx'); void el.offsetWidth; el.classList.add('fx');
+    const lab = document.createElement('span'); lab.className = 'fxlabel'; lab.textContent = TYPES[t].fx;
+    el.appendChild(lab); setTimeout(() => lab.remove(), 950);
+  }
+}
+
+/* ---------- Wake lock (keeps the iPad awake during a lesson) ---------- */
+let wake = null;
+async function requestWake() {
+  try {
+    if (S.view !== 'lesson' || document.visibilityState !== 'visible' || !navigator.wakeLock || wake) return;
+    wake = await navigator.wakeLock.request('screen');
+    wake.addEventListener('release', () => { wake = null; });
+  } catch (e) { wake = null; }
+}
+
+/* ---------- Rendering ---------- */
+function render() {
+  // header
+  const sel = $('#classSel');
+  sel.innerHTML = D.classes.map(k => `<option value="${k.id}">${esc(k.name)}</option>`).join('') +
+    `<option value="__manage">Klassen verwalten …</option>`;
+  sel.value = cls() ? D.ui.classId : '__manage';
+  if (!cls()) sel.selectedIndex = -1;
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === S.view)));
+
+  const k = cls();
+  main.className = '';
+  if (!k) { main.innerHTML = noClass(); return; }
+  let warn = DB.ok ? '' : `<div class="banner warn">Speichern ist in diesem Browser nicht möglich. Einträge gehen beim Schließen verloren. Bitte nicht im privaten Modus öffnen.</div>`;
+  if (S.view === 'lesson') { main.innerHTML = warn + renderLesson(k); main.classList.add('lesson'); runFlashes(); requestWake(); }
+  else if (S.view === 'edit') { main.innerHTML = warn + renderEdit(k); main.classList.add('edit'); }
+  else { main.innerHTML = warn + renderStats(k); main.classList.add('scroll'); }
+}
+
+function noClass() {
+  return `<div class="empty-state">
+    <h2>Noch keine Klasse</h2>
+    <p class="muted">Lege eine Klasse an, trage die Namen ein und setze sie in den Sitzplan. Danach kannst du in der Stunde direkt auf die Schüler tippen.</p>
+    <button class="btn primary" data-act="manage" type="button">Klasse anlegen</button>
+  </div>`;
+}
+
+function seatGrid(k, cell) {
+  const map = new Map();
+  k.students.forEach(s => { if (s.r != null && s.c != null) map.set(s.r + ':' + s.c, s); });
+  let html = '';
+  for (let dr = 0; dr < k.rows; dr++) for (let dc = 0; dc < k.cols; dc++) {
+    const r = k.flip ? k.rows - 1 - dr : dr, c = k.flip ? k.cols - 1 - dc : dc;
+    html += cell(map.get(r + ':' + c), r, c);
+  }
+  return `<div class="plan ${k.flip ? 'flip' : ''}">
+    <div class="grid" style="--rows:${k.rows};--cols:${k.cols}">${html}</div>
+    <div class="boardlabel">Tafel · Pult</div>
+  </div>`;
+}
+
+function renderLesson(k) {
+  const L = activeLesson(k);
+  const cnt = L ? counts(new Set([L.id])) : new Map();
+  let total = 0; cnt.forEach(o => total += o.m + o.g + o.n);
+  const last = S.undo.length ? D.events.find(e => e.id === S.undo[S.undo.length - 1]) : null;
+  const banner = k.sample ? `<div class="banner">Beispielklasse mit erfundenen Namen und Daten. Eigene Klassen legst du über das Klassen-Menü oben an; die Beispielklasse kannst du dort löschen.</div>` : '';
+  const placed = k.students.some(s => s.r != null);
+  return `${banner}
+  <div class="lessonbar">
+    <div class="lessoninfo">
+      <strong>${L ? `Stunde seit ${fmtTime(L.start)} Uhr` : 'Bereit für die nächste Stunde'}</strong>
+      <span>${L ? `${total} ${total === 1 ? 'Eintrag' : 'Einträge'}${L.absent.length ? ` · ${L.absent.length} abwesend` : ''}` : 'Der erste Eintrag startet die Stunde.'}</span>
+    </div>
+    <button class="btn" type="button" data-act="undo" ${last ? '' : 'disabled'}>↶ Rückgängig</button>
+    <button class="btn" type="button" data-act="newlesson" ${L ? '' : 'disabled'}>Stunde beenden</button>
+    <div class="legend">
+      <span class="lg m"><i></i>Tippen: Meldung</span>
+      <span class="lg g"><i></i>2× tippen: guter Beitrag</span>
+      <span class="lg n"><i></i>Wischen: schwach</span>
+      <span class="lg"><i></i>Halten: Menü</span>
+    </div>
+  </div>
+  ${placed ? seatGrid(k, (s) => {
+    if (!s) return `<div class="seat empty"></div>`;
+    const o = cnt.get(s.id);
+    const absent = L && L.absent.includes(s.id);
+    return `<div class="seat stu ${absent ? 'absent' : ''}" data-sid="${s.id}">
+      ${avatar(k, s)}<span class="nm">${esc(s.name)}</span>
+      ${o ? `<span class="cnt">${o.m ? `<b class="m">${o.m}</b>` : ''}${o.g ? `<b class="g">${o.g}</b>` : ''}${o.n ? `<b class="n">${o.n}</b>` : ''}</span>` : ''}
+    </div>`;
+  }) : `<div class="empty-state"><h2>Sitzplan ist leer</h2><p class="muted">Trage im Reiter „Sitzplan“ die Schüler ein und setze sie auf ihre Plätze.</p><button class="btn primary" type="button" data-act="goedit">Zum Sitzplan</button></div>`}`;
+}
+
+function renderEdit(k) {
+  const selS = stu(k, S.editSel);
+  const unplaced = k.students.filter(s => s.r == null);
+  return `
+  <div class="toolbar">
+    <span class="stepper"><label>Reihen</label><button type="button" data-act="rows" data-d="-1" aria-label="Weniger Reihen">−</button><span>${k.rows}</span><button type="button" data-act="rows" data-d="1" aria-label="Mehr Reihen">+</button></span>
+    <span class="stepper"><label>Plätze je Reihe</label><button type="button" data-act="cols" data-d="-1" aria-label="Weniger Plätze">−</button><span>${k.cols}</span><button type="button" data-act="cols" data-d="1" aria-label="Mehr Plätze">+</button></span>
+    <button class="btn" type="button" data-act="flip">⟲ Ansicht drehen</button>
+    <span class="spacer"></span>
+    <button class="btn" type="button" data-act="bulk">Namensliste einfügen</button>
+    <button class="btn primary" type="button" data-act="addstu">+ Schüler</button>
+  </div>
+  ${selS ? `<div class="selbar"><strong>${esc(selS.name)}</strong><span class="hint">Tippe auf einen Platz zum Umsetzen oder auf einen anderen Schüler zum Tauschen.</span><span class="spacer"></span>
+      <button class="btn small" type="button" data-act="editstu" data-sid="${selS.id}">Bearbeiten</button>
+      ${selS.r != null ? `<button class="btn small" type="button" data-act="unseat">Platz freigeben</button>` : ''}
+      <button class="btn small" type="button" data-act="desel">Fertig</button></div>`
+    : `<p class="hint" style="margin:0 0 10px">Tippe auf einen Schüler, um ihn auszuwählen, und dann auf einen Platz. Auf einen leeren Platz tippen legt dort einen neuen Schüler an.</p>`}
+  ${seatGrid(k, (s, r, c) => {
+    if (!s) return `<div class="seat empty ${selS ? 'target' : ''}" data-act="seat" data-r="${r}" data-c="${c}" role="button" aria-label="Freier Platz"></div>`;
+    return `<div class="seat stu ${S.editSel === s.id ? 'sel' : ''}" data-act="stu" data-sid="${s.id}" role="button">${avatar(k, s)}<span class="nm">${esc(s.name)}</span></div>`;
+  })}
+  <div class="tray"><span class="hint">Ohne Sitzplatz${unplaced.length ? '' : ': niemand'}</span>
+    ${unplaced.map(s => `<button type="button" class="chip ${S.editSel === s.id ? 'sel' : ''}" data-act="stu" data-sid="${s.id}">${avatar(k, s)}${esc(s.name)}</button>`).join('')}
+  </div>`;
+}
+
+/* ----- Stats ----- */
+function rangeLessons(k) {
+  const all = D.lessons.filter(l => l.c === k.id).sort((a, b) => b.start - a.start);
+  const r = D.ui.range, now = Date.now();
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  if (r === 'last') return all.slice(0, 1);
+  let from = 0, to = Infinity;
+  if (r === 'today') from = +today;
+  else if (r === '7') from = +today - 6 * DAY;
+  else if (r === '30') from = +today - 29 * DAY;
+  else if (r === 'custom') {
+    if (D.ui.from) from = +new Date(D.ui.from + 'T00:00');
+    if (D.ui.to) to = +new Date(D.ui.to + 'T00:00') + DAY;
+  }
+  return all.filter(l => l.start >= from && l.start < to && l.start <= now + DAY);
+}
+function computeStats(k) {
+  const ls = rangeLessons(k);
+  const ids = new Set(ls.map(l => l.id));
+  const cnt = counts(ids);
+  const rows = k.students.map(s => {
+    const o = cnt.get(s.id) || { m: 0, g: 0, n: 0 };
+    const present = ls.filter(l => !l.absent.includes(s.id)).length;
+    const pts = points(o);
+    return { s, m: o.m, g: o.g, n: o.n, present, pts, avg: present ? pts / present : null, total: o.m + o.g + o.n };
+  });
+  return { ls, rows };
+}
+function renderStats(k) {
+  const { ls, rows } = computeStats(k);
+  const r = D.ui.range;
+  const ranges = [['last', 'Letzte Stunde'], ['today', 'Heute'], ['7', '7 Tage'], ['30', '30 Tage'], ['all', 'Alles'], ['custom', 'Zeitraum']];
+  const sum = rows.reduce((a, x) => (a.m += x.m, a.g += x.g, a.n += x.n, a), { m: 0, g: 0, n: 0 });
+  const tb = `
+  <div class="toolbar">
+    <div class="seg">${ranges.map(([v, l]) => `<button type="button" data-act="range" data-v="${v}" aria-pressed="${r === v}">${l}</button>`).join('')}</div>
+    ${r === 'custom' ? `<input type="date" class="input" style="width:auto" id="fromD" value="${D.ui.from}" aria-label="Von"> – <input type="date" class="input" style="width:auto" id="toD" value="${D.ui.to}" aria-label="Bis">` : ''}
+    <span class="spacer"></span>
+    <div class="seg">${[['table', 'Tabelle'], ['plan', 'Sitzplan'], ['lessons', 'Stunden']].map(([v, l]) => `<button type="button" data-act="smode" data-v="${v}" aria-pressed="${S.statsMode === v}">${l}</button>`).join('')}</div>
+    <button class="btn" type="button" data-act="copy">Tabelle kopieren</button>
+    <button class="btn" type="button" data-act="csv">CSV exportieren</button>
+  </div>
+  <div class="summary">
+    <div class="tile"><div class="v">${ls.length}</div><div class="k">${ls.length === 1 ? 'Stunde' : 'Stunden'}</div></div>
+    <div class="tile m"><div class="v">${sum.m}</div><div class="k">Meldungen</div></div>
+    <div class="tile g"><div class="v">${sum.g}</div><div class="k">Gute Beiträge</div></div>
+    <div class="tile n"><div class="v">${sum.n}</div><div class="k">Schwache Mitarbeit</div></div>
+    <div class="tile"><div class="v">${fmtNum(ls.length ? (sum.m + sum.g + sum.n) / ls.length : null)}</div><div class="k">Einträge pro Stunde</div></div>
+  </div>`;
+  if (!ls.length) return tb + `<div class="empty-state" style="margin-top:30px"><h2>Keine Stunden im Zeitraum</h2><p class="muted">Wähle einen längeren Zeitraum oder erfasse zuerst eine Stunde.</p></div>`;
+
+  if (S.statsMode === 'plan') {
+    const maxAvg = Math.max(0.0001, ...rows.map(x => x.avg || 0));
+    const by = new Map(rows.map(x => [x.s.id, x]));
+    return tb + `<div class="statsplan">${seatGrid(k, s => {
+      if (!s) return `<div class="seat empty"></div>`;
+      const x = by.get(s.id); const pct = x.avg > 0 ? Math.round(x.avg / maxAvg * 42) : 0;
+      return `<div class="seat stu" data-act="detail" data-sid="${s.id}" style="background:color-mix(in srgb, var(--g) ${pct}%, var(--surface))">
+        ${avatar(k, s)}<span class="nm">${esc(s.name)}</span><span class="score">${fmtNum(x.avg)} <small>Ø</small></span></div>`;
+    })}</div><p class="hint">Je kräftiger das Grün, desto mehr Punkte pro anwesender Stunde. Tippe auf einen Schüler für den Verlauf.</p>`;
+  }
+
+  if (S.statsMode === 'lessons') {
+    return tb + `<div class="tablewrap"><table>
+      <thead><tr><th class="l">Datum</th><th>Uhrzeit</th><th>Meldungen</th><th>Gut</th><th>Schwach</th><th>Abwesend</th><th>Beteiligt</th><th></th></tr></thead>
+      <tbody>${ls.map(l => {
+        const c = counts(new Set([l.id])); let m = 0, g = 0, n = 0; c.forEach(o => { m += o.m; g += o.g; n += o.n; });
+        return `<tr style="cursor:default"><td class="l">${fmtDate(l.start)}</td><td>${fmtTime(l.start)}–${fmtTime(l.last || l.start)}</td>
+          <td class="m">${m}</td><td class="g">${g}</td><td class="n">${n}</td><td>${l.absent.length}</td><td>${c.size} von ${k.students.length - l.absent.length}</td>
+          <td><button class="btn small danger" type="button" data-act="dellesson" data-lid="${l.id}">Löschen</button></td></tr>`;
+      }).join('')}</tbody></table></div>`;
+  }
+
+  const { k: sk, dir } = S.sort;
+  const val = (x, key) => key === 'name' ? x.s.name.toLocaleLowerCase('de') : (x[key] ?? -Infinity);
+  rows.sort((a, b) => { const va = val(a, sk), vb = val(b, sk); return (va < vb ? -1 : va > vb ? 1 : 0) * dir || a.s.name.localeCompare(b.s.name, 'de'); });
+  const maxTotal = Math.max(1, ...rows.map(x => x.total));
+  const th = (key, label, cl = '') => `<th class="${cl}"><button type="button" data-act="sort" data-k="${key}" ${sk === key ? `aria-sort="${dir > 0 ? 'ascending' : 'descending'}"` : ''}>${label}${sk === key ? (dir > 0 ? ' ▲' : ' ▼') : ''}</button></th>`;
+  return tb + `<div class="tablewrap"><table>
+    <thead><tr>${th('name', 'Name', 'l')}${th('present', 'Stunden')}${th('m', 'Meldungen')}${th('g', 'Gut')}${th('n', 'Schwach')}${th('pts', 'Punkte')}${th('avg', 'Ø je Stunde')}<th class="l">Verteilung</th></tr></thead>
+    <tbody>${rows.map(x => `<tr data-act="detail" data-sid="${x.s.id}">
+      <td class="name"><div>${avatar(k, x.s)}${esc(x.s.name)}</div></td><td>${x.present}</td>
+      <td class="m">${x.m}</td><td class="g">${x.g}</td><td class="n">${x.n}</td><td class="pts">${x.pts}</td><td>${fmtNum(x.avg)}</td>
+      <td class="l"><div class="bar" title="${x.m} Meldungen, ${x.g} gute Beiträge, ${x.n} schwach">
+        <span class="m" style="width:${x.m / maxTotal * 100}%"></span><span class="g" style="width:${x.g / maxTotal * 100}%"></span><span class="n" style="width:${x.n / maxTotal * 100}%"></span></div></td>
+    </tr>`).join('')}</tbody></table></div>
+    <p class="hint">Punkte: Meldung ${D.settings.w.m}, guter Beitrag ${D.settings.w.g}, schwache Mitarbeit ${D.settings.w.n} (änderbar in den Einstellungen). „Stunden“ zählt nur Stunden, in denen der Schüler anwesend war.</p>`;
+}
+
+function exportTable(k, sep) {
+  const { rows } = computeStats(k);
+  rows.sort((a, b) => a.s.name.localeCompare(b.s.name, 'de'));
+  const num = x => x == null ? '' : (sep === ';' ? String(Math.round(x * 100) / 100).replace('.', ',') : String(Math.round(x * 100) / 100));
+  const q = s => sep === ';' ? `"${String(s).replace(/"/g, '""')}"` : String(s).replace(/\t/g, ' ');
+  const lines = [['Name', 'Stunden anwesend', 'Meldungen', 'Gute Beiträge', 'Schwache Mitarbeit', 'Punkte', 'Punkte je Stunde'].map(q).join(sep)];
+  rows.forEach(x => lines.push([q(x.s.name), x.present, x.m, x.g, x.n, x.pts, num(x.avg)].join(sep)));
+  return lines.join('\r\n');
+}
+
+async function shareOrDownload(filename, text, mime) {
+  const blob = new Blob([text], { type: mime });
+  try {
+    const file = new File([blob], filename, { type: mime });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: filename }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+/* ---------- Dialogs ---------- */
+const dlg = $('#dlg'), dlgBody = $('#dlgBody');
+let dlgOpenedAt = 0;
+function openDlg(html, onClick) {
+  dlgBody.innerHTML = html;
+  dlg.onclick = e => {
+    if (e.target === dlg) { dlg.close(); return; }
+    if (Date.now() - dlgOpenedAt < 350) return;
+    const a = e.target.closest('[data-a]'); if (a && onClick) { e.preventDefault(); onClick(a.dataset.a, a); }
+  };
+  dlgOpenedAt = Date.now();
+  if (!dlg.open) dlg.showModal();
+}
+dlgBody.addEventListener('submit', e => {
+  e.preventDefault();
+  const p = dlgBody.querySelector('.btn.primary[data-a]'); if (p) { dlgOpenedAt = 0; p.click(); }
+});
+function closeDlg() { if (dlg.open) dlg.close(); }
+
+function confirmBox(title, text, okLabel = 'OK', danger = false) {
+  return new Promise(res => {
+    const d = $('#confirmDlg');
+    $('#confirmTitle').textContent = title; $('#confirmText').textContent = text;
+    const ok = $('#confirmOk'); ok.textContent = okLabel;
+    ok.style.background = ok.style.borderColor = danger ? 'var(--danger)' : '';
+    d.onclose = () => res(d.returnValue === 'ok');
+    d.returnValue = '';
+    d.showModal();
+  });
+}
+
+let toastTimer;
+function toast(html) {
+  let t = $('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+  t.innerHTML = html; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+}
+
+function openMenu(sid) {
+  const k = cls(); const s = stu(k, sid); if (!s) return;
+  const L = activeLesson(k);
+  const o = (L && counts(new Set([L.id])).get(sid)) || { m: 0, g: 0, n: 0 };
+  const absent = L && L.absent.includes(sid);
+  openDlg(`
+    <div class="menuhead">${avatar(k, s, 'bigph')}<div><h2>${esc(s.name)}</h2><span class="hint">${L ? 'Diese Stunde' : 'Noch keine Einträge in dieser Stunde'}</span></div></div>
+    <div class="menugrid">
+      <button type="button" class="m" data-a="m">Meldung<span>${o.m}</span></button>
+      <button type="button" class="g" data-a="g">Guter Beitrag<span>${o.g}</span></button>
+      <button type="button" class="n" data-a="n">Schwach<span>${o.n}</span></button>
+    </div>
+    <div class="row">
+      <button type="button" class="btn" data-a="dellast" ${o.m + o.g + o.n ? '' : 'disabled'}>Letzten Eintrag löschen</button>
+      <button type="button" class="btn" data-a="absent">${absent ? 'Doch anwesend' : 'Abwesend'}</button>
+      <button type="button" class="btn" data-a="detail">Verlauf</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn primary" data-a="close">Schließen</button>
+    </div>`, a => {
+    if (a === 'm' || a === 'g' || a === 'n') { record(sid, a); openMenu(sid); dlgOpenedAt = 0; }
+    else if (a === 'dellast') { removeLastOf(sid); openMenu(sid); dlgOpenedAt = 0; }
+    else if (a === 'absent') { toggleAbsent(sid); closeDlg(); }
+    else if (a === 'detail') { openDetail(sid); }
+    else closeDlg();
+  });
+}
+
+function openDetail(sid) {
+  const k = cls(); const s = stu(k, sid); if (!s) return;
+  const ls = rangeLessons(k);
+  const rangeName = { last: 'letzte Stunde', today: 'heute', '7': 'letzte 7 Tage', '30': 'letzte 30 Tage', all: 'alle Stunden', custom: 'gewählter Zeitraum' }[D.ui.range];
+  let tot = { m: 0, g: 0, n: 0 }, present = 0;
+  const rowsHtml = ls.map(l => {
+    const o = counts(new Set([l.id])).get(sid) || { m: 0, g: 0, n: 0 };
+    const ab = l.absent.includes(sid);
+    if (!ab) { present++; tot.m += o.m; tot.g += o.g; tot.n += o.n; }
+    return `<tr><td class="l">${fmtDate(l.start)}, ${fmtTime(l.start)}</td>${ab ? `<td colspan="4" class="muted">abwesend</td>` : `<td class="m">${o.m}</td><td class="g">${o.g}</td><td class="n">${o.n}</td><td class="pts">${points(o)}</td>`}</tr>`;
+  }).join('');
+  const pts = points(tot);
+  openDlg(`
+    <div class="menuhead">${avatar(k, s, 'bigph')}<div><h2>${esc(s.name)}</h2><span class="hint">${esc(k.name)} · ${rangeName}</span></div></div>
+    <div class="summary" style="grid-template-columns:repeat(4,minmax(0,1fr));margin:0">
+      <div class="tile m"><div class="v">${tot.m}</div><div class="k">Meldungen</div></div>
+      <div class="tile g"><div class="v">${tot.g}</div><div class="k">Gut</div></div>
+      <div class="tile n"><div class="v">${tot.n}</div><div class="k">Schwach</div></div>
+      <div class="tile"><div class="v">${fmtNum(present ? pts / present : null)}</div><div class="k">Ø Punkte je Stunde</div></div>
+    </div>
+    ${ls.length ? `<div class="dtable"><table><thead><tr><th class="l">Stunde</th><th>Meld.</th><th>Gut</th><th>Schw.</th><th>Punkte</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>` : '<p class="muted">Keine Stunden im gewählten Zeitraum.</p>'}
+    <div class="actions"><button type="button" class="btn primary" data-a="close">Schließen</button></div>`, () => closeDlg());
+}
+
+let photoTarget = null;   // {sid, dataURL|null}
+function openStudent(k, sid, seat) {
+  const s = sid ? stu(k, sid) : null;
+  const draft = { name: s ? s.name : '', photo: s ? (PH.get(s.id) || null) : null };
+  const paint = () => {
+    openDlg(`
+      <h2>${s ? 'Schüler bearbeiten' : 'Neuer Schüler'}</h2>
+      <div class="row" style="gap:16px;align-items:center">
+        <span class="bigph" style="--h:${hue(draft.name || 'x')}">${draft.photo ? `<img src="${draft.photo}" alt="">` : esc(initials(draft.name || '?'))}</span>
+        <div class="row" style="flex-direction:column;align-items:flex-start">
+          <button type="button" class="btn" data-a="photo">${draft.photo ? 'Foto ändern' : 'Foto aufnehmen oder wählen'}</button>
+          ${draft.photo ? `<button type="button" class="btn danger small" data-a="nophoto">Foto entfernen</button>` : ''}
+        </div>
+      </div>
+      <div class="field"><label for="stuName">Name</label><input id="stuName" class="input" autocomplete="off" value="${esc(draft.name)}" placeholder="Vorname Nachname"></div>
+      <div class="actions">
+        ${s ? `<button type="button" class="btn danger" data-a="delete">Löschen</button><span class="spacer"></span>` : ''}
+        <button type="button" class="btn" data-a="cancel">Abbrechen</button>
+        <button type="button" class="btn primary" data-a="save">Speichern</button>
+      </div>`, async a => {
+      draft.name = $('#stuName').value;
+      if (a === 'photo') { photoTarget = p => { draft.photo = p; paint(); }; $('#photoInput').value = ''; $('#photoInput').click(); }
+      else if (a === 'nophoto') { draft.photo = null; paint(); }
+      else if (a === 'cancel') closeDlg();
+      else if (a === 'delete') {
+        closeDlg();
+        if (await confirmBox(`${s.name} löschen?`, 'Alle Einträge dieses Schülers werden ebenfalls gelöscht.', 'Löschen', true)) {
+          k.students = k.students.filter(x => x.id !== s.id);
+          D.events = D.events.filter(e => e.s !== s.id);
+          PH.delete(s.id); DB.del('photo:' + s.id).catch(() => {});
+          S.editSel = null; save(); render();
+        }
+      } else if (a === 'save') {
+        const name = draft.name.trim();
+        if (!name) { $('#stuName').focus(); return; }
+        let target = s;
+        if (!target) {
+          target = { id: uid(), name, r: null, c: null };
+          const pos = seat || freeSeat(k);
+          if (pos) { target.r = pos.r; target.c = pos.c; }
+          k.students.push(target);
+        }
+        target.name = name;
+        if (draft.photo) { PH.set(target.id, draft.photo); DB.set('photo:' + target.id, draft.photo).catch(() => {}); }
+        else if (PH.has(target.id)) { PH.delete(target.id); DB.del('photo:' + target.id).catch(() => {}); }
+        save(); closeDlg(); render();
+      }
+    });
+    setTimeout(() => { const i = $('#stuName'); if (i && !s) i.focus(); }, 50);
+    dlgOpenedAt = 0;
+  };
+  paint();
+}
+$('#photoInput').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0]; if (!f || !photoTarget) return;
+  try { const p = await toPhoto(f); photoTarget(p); } catch (err) { toast('Das Foto konnte nicht gelesen werden.'); }
+});
+function toPhoto(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const s = Math.min(img.naturalWidth, img.naturalHeight), size = 320;
+      const sx = (img.naturalWidth - s) / 2, sy = Math.max(0, (img.naturalHeight - s) * 0.3);
+      const cv = document.createElement('canvas'); cv.width = cv.height = size;
+      cv.getContext('2d').drawImage(img, sx, sy, s, s, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      res(cv.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('img')); };
+    img.src = url;
+  });
+}
+function freeSeat(k) {
+  const used = new Set(k.students.filter(s => s.r != null).map(s => s.r + ':' + s.c));
+  for (let r = 0; r < k.rows; r++) for (let c = 0; c < k.cols; c++) if (!used.has(r + ':' + c)) return { r, c };
+  return null;
+}
+
+function openBulk(k) {
+  openDlg(`
+    <h2>Namensliste einfügen</h2>
+    <p class="hint" style="margin:0">Ein Name pro Zeile, zum Beispiel aus der Klassenliste kopiert. Die Schüler werden auf freie Plätze gesetzt; Fotos kannst du danach ergänzen.</p>
+    <textarea id="bulkText" class="input" placeholder="Lena Albrecht&#10;Jonas Becker&#10;…"></textarea>
+    <div class="actions"><button type="button" class="btn" data-a="cancel">Abbrechen</button><button type="button" class="btn primary" data-a="add">Hinzufügen</button></div>`, a => {
+    if (a === 'add') {
+      const names = $('#bulkText').value.split(/\r?\n/).map(x => x.replace(/\t/g, ' ').trim()).filter(Boolean);
+      names.forEach(name => { const pos = freeSeat(k); k.students.push({ id: uid(), name, r: pos ? pos.r : null, c: pos ? pos.c : null }); });
+      save(); closeDlg(); render();
+      if (names.length) toast(`${names.length} ${names.length === 1 ? 'Schüler' : 'Schüler'} hinzugefügt`);
+    } else closeDlg();
+  });
+  setTimeout(() => $('#bulkText') && $('#bulkText').focus(), 50);
+}
+
+function openManage() {
+  const paint = () => openDlg(`
+    <h2>Klassen verwalten</h2>
+    <div class="list">${D.classes.map(k => `<div class="item">
+      <input class="input" data-cid="${k.id}" value="${esc(k.name)}" aria-label="Name der Klasse">
+      <button type="button" class="btn danger small" data-a="del" data-cid="${k.id}">Löschen</button></div>`).join('') || '<p class="muted">Noch keine Klassen.</p>'}</div>
+    <div class="field"><label for="newClass">Neue Klasse</label>
+      <div class="row"><input id="newClass" class="input" style="flex:1" placeholder="z. B. 8a Mathematik" autocomplete="off"><button type="button" class="btn primary" data-a="add">Anlegen</button></div></div>
+    <div class="actions"><button type="button" class="btn" data-a="close">Fertig</button></div>`, async (a, el) => {
+    applyNames();
+    if (a === 'add') {
+      const name = $('#newClass').value.trim(); if (!name) { $('#newClass').focus(); return; }
+      const k = { id: uid(), name, rows: 5, cols: 6, flip: false, students: [] };
+      D.classes.push(k); D.ui.classId = k.id; S.view = 'edit'; save(); closeDlg(); render();
+      toast(`${esc(name)} angelegt. Füge jetzt die Schüler hinzu.`);
+    } else if (a === 'del') {
+      const k = D.classes.find(c => c.id === el.dataset.cid); closeDlg();
+      if (await confirmBox(`${k.name} löschen?`, 'Die Klasse, der Sitzplan und alle erfassten Stunden werden endgültig gelöscht.', 'Endgültig löschen', true)) {
+        k.students.forEach(s => { PH.delete(s.id); DB.del('photo:' + s.id).catch(() => {}); });
+        D.classes = D.classes.filter(c => c.id !== k.id);
+        D.lessons = D.lessons.filter(l => l.c !== k.id);
+        D.events = D.events.filter(e => e.c !== k.id);
+        if (D.ui.classId === k.id) D.ui.classId = D.classes[0] ? D.classes[0].id : null;
+        save(); render();
+      }
+      openManage();
+    } else { save(); closeDlg(); render(); }
+  });
+  const applyNames = () => dlgBody.querySelectorAll('input[data-cid]').forEach(i => {
+    const k = D.classes.find(c => c.id === i.dataset.cid); if (k && i.value.trim()) { k.name = i.value.trim(); }
+  });
+  paint();
+  dlgOpenedAt = 0;
+}
+
+function openSettings() {
+  const st = D.settings;
+  openDlg(`
+    <h2>Einstellungen</h2>
+    <div class="field"><label>Punkte für die Auswertung</label>
+      <div class="row">
+        <span class="lg m"><i></i>Meldung</span><input id="wM" class="input" type="number" step="0.5" style="width:80px" value="${st.w.m}">
+        <span class="lg g"><i></i>Gut</span><input id="wG" class="input" type="number" step="0.5" style="width:80px" value="${st.w.g}">
+        <span class="lg n"><i></i>Schwach</span><input id="wN" class="input" type="number" step="0.5" style="width:80px" value="${st.w.n}">
+      </div></div>
+    <div class="field"><label for="dbl">Zeitfenster für Doppeltippen: <span id="dblV">${st.dbl}</span> ms</label>
+      <input id="dbl" type="range" min="200" max="600" step="20" value="${st.dbl}"></div>
+    <div class="field"><label for="autoMin">Neue Stunde automatisch nach Pause von (Minuten, 0 = aus)</label>
+      <input id="autoMin" class="input" type="number" min="0" step="5" style="width:110px" value="${st.autoMin}"></div>
+    <div class="field"><label>Datensicherung</label>
+      <p class="hint" style="margin:0">Alle Daten liegen nur auf diesem Gerät. Exportiere regelmäßig eine Sicherung, zum Beispiel in die Dateien-App oder in eine Cloud.</p>
+      <div class="row"><button type="button" class="btn" data-a="export">Sicherung exportieren</button><button type="button" class="btn" data-a="import">Sicherung importieren</button><button type="button" class="btn danger" data-a="wipe">Alle Daten löschen</button></div></div>
+    <div class="actions"><button type="button" class="btn primary" data-a="close">Fertig</button></div>`, async a => {
+    applySettings();
+    if (a === 'export') exportBackup();
+    else if (a === 'import') { $('#importInput').value = ''; $('#importInput').click(); }
+    else if (a === 'wipe') {
+      closeDlg();
+      if (await confirmBox('Alle Daten löschen?', 'Alle Klassen, Fotos und Stunden werden von diesem Gerät gelöscht. Das lässt sich nicht rückgängig machen.', 'Alles löschen', true)) {
+        await DB.clear().catch(() => {}); PH.clear(); D = defaults(); S.undo = []; save(); render();
+      }
+    } else { closeDlg(); render(); }
+  });
+  $('#dbl').addEventListener('input', e => { $('#dblV').textContent = e.target.value; });
+  const applySettings = () => {
+    const n = (id, d) => { const v = parseFloat($(id).value); return isFinite(v) ? v : d; };
+    st.w.m = n('#wM', 1); st.w.g = n('#wG', 2); st.w.n = n('#wN', -1);
+    st.dbl = Math.round(n('#dbl', 320)); st.autoMin = Math.max(0, Math.round(n('#autoMin', 60)));
+    save();
+  };
+  dlg.addEventListener('close', applySettingsOnce, { once: true });
+  function applySettingsOnce() { if ($('#wM')) applySettings(); render(); }
+  dlgOpenedAt = 0;
+}
+
+async function exportBackup() {
+  const photos = {}; PH.forEach((v, k) => { photos[k] = v; });
+  const json = JSON.stringify({ app: 'mitarbeit-im-blick', exported: new Date().toISOString(), data: D, photos });
+  await shareOrDownload(`Mitarbeit-Sicherung-${isoDay(Date.now())}.json`, json, 'application/json');
+}
+$('#importInput').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  try {
+    const obj = JSON.parse(await f.text());
+    if (!obj || obj.app !== 'mitarbeit-im-blick' || !obj.data || !Array.isArray(obj.data.classes)) throw new Error('format');
+    closeDlg();
+    if (!(await confirmBox('Sicherung importieren?', `Die Sicherung vom ${new Date(obj.exported).toLocaleString('de-DE')} ersetzt alle Daten auf diesem Gerät.`, 'Importieren', true))) return;
+    await DB.clear().catch(() => {});
+    D = Object.assign(defaults(), obj.data);
+    D.settings = Object.assign(defaults().settings, obj.data.settings || {});
+    D.ui = Object.assign(defaults().ui, obj.data.ui || {});
+    PH.clear();
+    for (const [k, v] of Object.entries(obj.photos || {})) { PH.set(k, v); await DB.set('photo:' + k, v).catch(() => {}); }
+    S.undo = []; flush(); render(); toast('Sicherung importiert');
+  } catch (err) { toast('Diese Datei ist keine gültige Sicherung.'); }
+});
+
+/* ---------- Event wiring ---------- */
+$('#classSel').addEventListener('change', e => {
+  const v = e.target.value;
+  if (v === '__manage') { render(); openManage(); return; }
+  D.ui.classId = v; S.editSel = null; S.undo = []; flushPending(); save(); render();
+});
+document.querySelector('.tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-view]'); if (!b) return;
+  flushPending();
+  S.view = b.dataset.view; S.editSel = null;
+  if (S.view !== 'lesson' && wake) { wake.release().catch(() => {}); wake = null; }
+  render();
+});
+$('#settingsBtn').addEventListener('click', openSettings);
+
+main.addEventListener('change', e => {
+  if (e.target.id === 'fromD') { D.ui.from = e.target.value; save(); render(); }
+  if (e.target.id === 'toD') { D.ui.to = e.target.value; save(); render(); }
+});
+
+main.addEventListener('click', async e => {
+  const a = e.target.closest('[data-act]'); if (!a) return;
+  const k = cls(); const act = a.dataset.act;
+  switch (act) {
+    case 'manage': openManage(); break;
+    case 'undo': undo(); break;
+    case 'newlesson': {
+      const l = activeLesson(k); if (l) { l.closed = true; S.undo = []; save(); render(); toast('Stunde beendet. Der nächste Eintrag beginnt eine neue Stunde.'); }
+      break;
+    }
+    case 'goedit': S.view = 'edit'; render(); break;
+    case 'rows': case 'cols': {
+      const d = +a.dataset.d; const key = act;
+      k[key] = Math.min(12, Math.max(1, k[key] + d));
+      k.students.forEach(s => { if (s.r != null && (s.r >= k.rows || s.c >= k.cols)) { s.r = null; s.c = null; } });
+      save(); render(); break;
+    }
+    case 'flip': k.flip = !k.flip; save(); render(); break;
+    case 'bulk': openBulk(k); break;
+    case 'addstu': openStudent(k, null, null); break;
+    case 'desel': S.editSel = null; render(); break;
+    case 'editstu': openStudent(k, a.dataset.sid); break;
+    case 'unseat': { const s = stu(k, S.editSel); if (s) { s.r = s.c = null; } S.editSel = null; save(); render(); break; }
+    case 'seat': {
+      const r = +a.dataset.r, c = +a.dataset.c;
+      const s = stu(k, S.editSel);
+      if (s) { s.r = r; s.c = c; S.editSel = null; save(); render(); }
+      else openStudent(k, null, { r, c });
+      break;
+    }
+    case 'stu': {
+      const sid = a.dataset.sid;
+      if (S.editSel === sid) { openStudent(k, sid); break; }
+      const cur = stu(k, S.editSel), other = stu(k, sid);
+      if (cur && other && (cur.r != null || other.r != null)) {
+        [cur.r, other.r] = [other.r, cur.r]; [cur.c, other.c] = [other.c, cur.c];
+        S.editSel = null; save();
+      } else S.editSel = sid;
+      render(); break;
+    }
+    case 'range': D.ui.range = a.dataset.v; save(); render(); break;
+    case 'smode': S.statsMode = a.dataset.v; render(); break;
+    case 'sort': {
+      const key = a.dataset.k;
+      S.sort = S.sort.k === key ? { k: key, dir: -S.sort.dir } : { k: key, dir: key === 'name' ? 1 : -1 };
+      render(); break;
+    }
+    case 'detail': openDetail(a.dataset.sid); break;
+    case 'copy': {
+      const text = exportTable(k, '\t');
+      try { await navigator.clipboard.writeText(text); toast('Tabelle kopiert. In Numbers oder Excel einfügen.'); }
+      catch (err) { toast('Kopieren war nicht möglich. Nutze „CSV exportieren“.'); }
+      break;
+    }
+    case 'csv': {
+      const name = `Mitarbeit-${k.name.replace(/[^\wäöüÄÖÜß-]+/g, '_')}-${isoDay(Date.now())}.csv`;
+      shareOrDownload(name, '﻿' + exportTable(k, ';'), 'text/csv');
+      break;
+    }
+    case 'dellesson': {
+      const l = D.lessons.find(x => x.id === a.dataset.lid);
+      if (l && await confirmBox('Stunde löschen?', `Die Stunde vom ${fmtDate(l.start)}, ${fmtTime(l.start)} Uhr und alle ihre Einträge werden gelöscht.`, 'Löschen', true)) {
+        D.lessons = D.lessons.filter(x => x.id !== l.id); D.events = D.events.filter(ev => ev.l !== l.id); save(); render();
+      }
+      break;
+    }
+  }
+});
+
+/* ---------- Start ---------- */
+(async function start() {
+  await DB.open();
+  let data = null;
+  try { data = await DB.get('data'); } catch (e) { DB.ok = false; }
+  if (data && Array.isArray(data.classes)) {
+    D = Object.assign(defaults(), data);
+    D.settings = Object.assign(defaults().settings, data.settings || {});
+    D.settings.w = Object.assign({ m: 1, g: 2, n: -1 }, D.settings.w || {});
+    D.ui = Object.assign(defaults().ui, data.ui || {});
+  } else {
+    D = sampleData(); flush();
+  }
+  try { (await DB.all('photo:')).forEach((v, k) => PH.set(k.slice(6), v)); } catch (e) {}
+  if (!cls() && D.classes[0]) D.ui.classId = D.classes[0].id;
+  render();
+  // refresh the lesson header once a minute (auto-new-lesson timeout)
+  setInterval(() => { if (S.view === 'lesson' && !G && !P && !dlg.open) render(); }, 60000);
+  try {
+    if ('serviceWorker' in navigator && location.protocol === 'https:' && window.self === window.top) navigator.serviceWorker.register('sw.js').catch(() => {});
+  } catch (e) {}
+})();
+})();
+</script>
+<!--APP-END-->
+</body>
+</html>
