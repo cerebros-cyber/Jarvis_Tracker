@@ -41,18 +41,20 @@ Die Fotos werden quadratisch zugeschnitten und verkleinert gespeichert (ca. 20�
 
 ## Auf dem iPad einrichten
 
-Die App ist eine einzelne Webseite (`index.html`) und muss einmal irgendwo über HTTPS erreichbar sein. Danach läuft sie auch ohne Internet.
+Die App ist eine einzelne Webseite (`index.html`) und wird über GitHub Pages veröffentlicht. Nach dem ersten Laden läuft sie auch ohne Internet.
 
-1. **Veröffentlichen**, zum Beispiel mit GitHub Pages: Im Repository unter *Settings → Pages* die Quelle *Deploy from a branch* wählen, den Branch und den Ordner `/ (root)` einstellen und speichern. Nach etwa einer Minute ist die App unter der angezeigten Adresse erreichbar.
-   Alternativ den Ordner auf einen beliebigen Webspace laden oder per Drag-and-drop bei Netlify Drop hochladen.
+1. **GitHub Pages einschalten (einmalig):** Im Repository unter *Settings → Pages* bei *Source* „Deploy from a branch“ wählen, Branch `main` und Ordner `/ (root)` einstellen und *Save* drücken. Nach etwa einer Minute ist die App erreichbar unter
+   **https://cerebros-cyber.github.io/Jarvis_Tracker/**
 2. Die Adresse auf dem iPad in **Safari** öffnen.
-3. **Teilen-Symbol → „Zum Home-Bildschirm“** antippen. Die App erscheint dann mit eigenem Symbol und startet im Vollbild.
+3. **Teilen-Symbol → „Zum Home-Bildschirm“ → „Hinzufügen“** antippen. Die App erscheint mit eigenem Symbol und startet im Vollbild.
 
-Beim ersten Start ist eine Beispielklasse mit erfundenen Namen angelegt, damit du alles ausprobieren kannst. Über das Klassen-Menü oben links (*Klassen verwalten …*) legst du deine eigenen Klassen an und löschst die Beispielklasse.
+Wichtig: Die App auf dem Home-Bildschirm hat einen eigenen Speicher. Lege deine Klassen erst dort an, nicht vorher in Safari.
+
+Updates: Wird `index.html` hier geändert, lädt die App die neue Version beim nächsten Start mit Internetverbindung.
 
 ## Datenschutz
 
-Alle Namen, Fotos und Einträge werden **nur lokal auf dem iPad** gespeichert (im Browser-Speicher der App). Es gibt keinen Server und keine Übertragung. Daraus folgt:
+Alle Namen, Fotos und Einträge werden **nur lokal auf dem iPad** gespeichert (im Browser-Speicher der App). Es gibt keinen Server und keine Übertragung. Dieses Repository ist öffentlich, enthält aber nur das Programm und eine Beispielklasse mit erfundenen Namen, keine Schülerdaten. Lege Sicherungsdateien niemals in dieses Repository. Daraus folgt:
 
 - Exportiere regelmäßig eine **Sicherung** (Zahnrad → *Sicherung exportieren*), zum Beispiel in die Dateien-App. Wenn die App vom Home-Bildschirm gelöscht oder der Safari-Verlauf samt Website-Daten gelöscht wird, sind die Daten sonst weg.
 - Die Sicherungsdatei enthält personenbezogene Daten und Fotos. Bewahre sie entsprechend geschützt auf und beachte die Vorgaben deiner Schule zum Umgang mit Schülerdaten.
