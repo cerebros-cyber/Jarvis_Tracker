@@ -323,6 +323,13 @@ textarea.input { min-height: 180px; resize: vertical; }
 .empty-state { margin: auto; text-align: center; max-width: 420px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .empty-state h2 { margin: 0; font-family: var(--font-light); font-weight: 300; font-size: 28px; }
 .fileinput { display: none; }
+.btn.primary.danger { background: var(--danger); border-color: var(--danger); color: var(--on-primary); }
+.choices { display: flex; flex-direction: column; gap: 8px; }
+.choice { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; cursor: pointer; }
+.choice:has(input:checked) { border-color: var(--tint-line); background: var(--tint); }
+.choice input { accent-color: var(--accent); width: 18px; height: 18px; margin: 2px 0 0; flex: none; }
+.choice b { font-weight: 600; display: block; }
+.choice span { font-size: 13px; color: var(--muted); }
 dialog.wide { width: min(900px, calc(100vw - 32px)); }
 #app.focus .foot, #app.focus .boardlabel { display: none; }
 #app.focus .top { padding-top: 4px; }
@@ -654,7 +661,7 @@ function renderFoot(k) {
       left = `Sitzplan  ·  ${esc(k.name)}  ·  ${k.students.length} Schüler  ·  ${withPh} mit Foto`;
     } else {
       const names = { last: 'letzte Stunde', today: 'heute', '7': '7 Tage', '30': '30 Tage', all: 'alle Stunden', custom: 'Zeitraum' };
-      left = `Auswertung  ·  ${esc(k.name)}  ·  ${names[D.ui.range]}  ·  ${rangeLessons(k).length} Stunden`;
+      left = `Auswertung  ·  ${esc(k.name)}  ·  ${names[D.ui.range]}  ·  ${rangeLessons(k).length} ${rangeLessons(k).length === 1 ? 'Stunde' : 'Stunden'}`;
     }
   }
   $('#foot').innerHTML = `<span>${left}</span><span class="r">${right}</span><img src="${LOGO}" alt="Campus Glienicke">`;
@@ -784,6 +791,7 @@ function renderStats(k) {
     <div class="seg">${[['table', 'Tabelle'], ['plan', 'Sitzplan'], ['lessons', 'Stunden']].map(([v, l]) => `<button type="button" data-act="smode" data-v="${v}" aria-pressed="${S.statsMode === v}">${l}</button>`).join('')}</div>
     <button class="btn" type="button" data-act="copy">Tabelle kopieren</button>
     <button class="btn" type="button" data-act="csv">CSV exportieren</button>
+    <button class="btn danger" type="button" data-act="reset">Einträge zurücksetzen</button>
   </div>
   <div class="summary">
     <div class="tile"><div class="v">${ls.length}</div><div class="k">${ls.length === 1 ? 'Stunde' : 'Stunden'}</div></div>
@@ -942,7 +950,16 @@ function openDetail(sid) {
       <div class="tile"><div class="v">${fmtNum(present ? pts / present : null)}</div><div class="k">Ø Punkte je Stunde</div></div>
     </div>
     ${ls.length ? `<div class="dtable"><table><thead><tr><th class="l">Stunde</th><th>Meld.</th><th>Gut</th><th>Schw.</th><th>Punkte</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>` : '<p class="muted">Keine Stunden im gewählten Zeitraum.</p>'}
-    <div class="actions"><button type="button" class="btn primary" data-a="close">Schließen</button></div>`, () => closeDlg());
+    <div class="actions"><button type="button" class="btn danger" data-a="resetstu">Alle Einträge von ${esc(s.name.split(' ')[0])} löschen</button><span class="spacer"></span><button type="button" class="btn primary" data-a="close">Schließen</button></div>`, async a => {
+    if (a !== 'resetstu') { closeDlg(); return; }
+    closeDlg();
+    const n = D.events.filter(e => e.s === sid).length;
+    if (!n) { toast(`${esc(s.name)} hat keine Einträge.`); return; }
+    if (await confirmBox(`Einträge von ${s.name} löschen?`, `${n} ${n === 1 ? 'Eintrag wird' : 'Einträge werden'} aus allen Stunden gelöscht. Der Schüler, sein Platz und sein Foto bleiben erhalten.`, 'Löschen', true)) {
+      D.events = D.events.filter(e => e.s !== sid); S.undo = []; save(); render();
+      toast(`${n} ${n === 1 ? 'Eintrag' : 'Einträge'} von ${esc(s.name)} gelöscht`);
+    }
+  });
 }
 
 let photoTarget = null;   // {sid, dataURL|null}
@@ -1207,11 +1224,15 @@ function openSettings() {
       <input id="autoMin" class="input" type="number" min="0" step="5" style="width:110px" value="${st.autoMin}"></div>
     <div class="field"><label>Datensicherung</label>
       <p class="hint" style="margin:0">Alle Daten liegen nur auf diesem Gerät. Exportiere regelmäßig eine Sicherung, zum Beispiel in die Dateien-App oder in eine Cloud.</p>
-      <div class="row"><button type="button" class="btn" data-a="export">Sicherung exportieren</button><button type="button" class="btn" data-a="import">Sicherung importieren</button><button type="button" class="btn danger" data-a="wipe">Alle Daten löschen</button></div></div>
+      <div class="row"><button type="button" class="btn" data-a="export">Sicherung exportieren</button><button type="button" class="btn" data-a="import">Sicherung importieren</button></div></div>
+    <div class="field"><label>Zurücksetzen</label>
+      <p class="hint" style="margin:0">„Einträge zurücksetzen“ löscht Meldungen, Beiträge und Stunden, Klassen, Sitzpläne und Fotos bleiben. „Alle Daten löschen“ entfernt alles.</p>
+      <div class="row"><button type="button" class="btn danger" data-a="reset">Einträge zurücksetzen</button><button type="button" class="btn danger" data-a="wipe">Alle Daten löschen</button></div></div>
     <div class="actions"><button type="button" class="btn primary" data-a="close">Fertig</button></div>`, async a => {
     applySettings();
     if (a === 'export') exportBackup();
     else if (a === 'import') { $('#importInput').value = ''; $('#importInput').click(); }
+    else if (a === 'reset') { closeDlg(); openReset(cls() ? 'class' : 'all'); }
     else if (a === 'wipe') {
       closeDlg();
       if (await confirmBox('Alle Daten löschen?', 'Alle Klassen, Fotos und Stunden werden von diesem Gerät gelöscht. Das lässt sich nicht rückgängig machen.', 'Alles löschen', true)) {
@@ -1228,6 +1249,57 @@ function openSettings() {
   };
   dlg.addEventListener('close', applySettingsOnce, { once: true });
   function applySettingsOnce() { if ($('#wM')) applySettings(); render(); }
+  dlgOpenedAt = 0;
+}
+
+/* ----- Resetting participation entries (classes, seating plans and photos stay) ----- */
+function resetLessons(scope) {
+  const k = cls();
+  if (scope === 'all') return D.lessons.slice();
+  if (!k) return [];
+  return scope === 'range' ? rangeLessons(k) : D.lessons.filter(l => l.c === k.id);
+}
+function openReset(preset) {
+  const k = cls();
+  const rangeName = { last: 'letzte Stunde', today: 'heute', '7': 'letzte 7 Tage', '30': 'letzte 30 Tage', all: 'alle Stunden', custom: 'gewählter Zeitraum' }[D.ui.range];
+  const info = scope => {
+    const ls = resetLessons(scope); const ids = new Set(ls.map(l => l.id));
+    const n = D.events.filter(e => ids.has(e.l)).length;
+    return `${n} ${n === 1 ? 'Eintrag' : 'Einträge'} in ${ls.length} ${ls.length === 1 ? 'Stunde' : 'Stunden'}`;
+  };
+  const opts = [];
+  if (k) {
+    opts.push(['range', `Zeitraum „${rangeName}“ in ${esc(k.name)}`, `${info('range')}. Den Zeitraum wählst du oben in der Auswertung.`]);
+    opts.push(['class', `Alle Einträge der Klasse ${esc(k.name)}`, info('class')]);
+  }
+  opts.push(['all', 'Alle Einträge aller Klassen', `${info('all')}, zum Beispiel für ein neues Halbjahr.`]);
+  if (!opts.some(o => o[0] === preset)) preset = opts[0][0];
+  openDlg(`
+    <h2>Einträge zurücksetzen</h2>
+    <p class="hint" style="margin:0">Gelöscht werden Meldungen, gute Beiträge, schwache Mitarbeit, Abwesenheiten und die Stunden selbst. Klassen, Schüler, Sitzpläne, Fotos und Einstellungen bleiben erhalten.</p>
+    <div class="choices">${opts.map(([v, t, d]) => `<label class="choice"><input type="radio" name="resetScope" value="${v}" ${v === preset ? 'checked' : ''}><div><b>${t}</b><span>${d}</span></div></label>`).join('')}</div>
+    <div class="banner" style="margin:0"><span class="mark-pill">Tipp</span><span>Exportiere vorher eine Sicherung. Mit ihr kannst du die Einträge bei Bedarf wiederherstellen.</span></div>
+    <div class="actions">
+      <button type="button" class="btn" data-a="export">Sicherung exportieren</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" data-a="cancel">Abbrechen</button>
+      <button type="button" class="btn primary danger" data-a="reset">Zurücksetzen</button>
+    </div>`, async a => {
+    if (a === 'export') { exportBackup(); return; }
+    if (a !== 'reset') { closeDlg(); return; }
+    const scope = (dlgBody.querySelector('input[name="resetScope"]:checked') || {}).value || preset;
+    const ls = resetLessons(scope); const ids = new Set(ls.map(l => l.id));
+    const n = D.events.filter(e => ids.has(e.l)).length;
+    closeDlg();
+    if (!ls.length) { toast('Im gewählten Bereich gibt es keine Einträge.'); return; }
+    const what = scope === 'all' ? 'aller Klassen' : scope === 'class' ? `der Klasse ${k.name}` : `im Zeitraum „${rangeName}“ (${k.name})`;
+    if (await confirmBox('Wirklich zurücksetzen?', `${n} ${n === 1 ? 'Eintrag' : 'Einträge'} in ${ls.length} ${ls.length === 1 ? 'Stunde' : 'Stunden'} ${what} werden gelöscht. Das lässt sich nur mit einer Sicherung rückgängig machen.`, 'Zurücksetzen', true)) {
+      D.lessons = D.lessons.filter(l => !ids.has(l.id));
+      D.events = D.events.filter(e => !ids.has(e.l));
+      S.undo = []; flush(); render();
+      toast(`${n} ${n === 1 ? 'Eintrag' : 'Einträge'} zurückgesetzt`);
+    }
+  });
   dlgOpenedAt = 0;
 }
 
@@ -1356,6 +1428,7 @@ main.addEventListener('click', async e => {
       shareOrDownload(name, '﻿' + exportTable(k, ';'), 'text/csv');
       break;
     }
+    case 'reset': openReset('range'); break;
     case 'dellesson': {
       const l = D.lessons.find(x => x.id === a.dataset.lid);
       if (l && await confirmBox('Stunde löschen?', `Die Stunde vom ${fmtDate(l.start)}, ${fmtTime(l.start)} Uhr und alle ihre Einträge werden gelöscht.`, 'Löschen', true)) {
