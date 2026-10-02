@@ -1,6 +1,6 @@
 # Mitarbeit im Blick
 
-Web-App für das iPad auf dem Lehrerpult: Die Klasse erscheint als Sitzplan mit Fotos, und du erfasst die mündliche Mitarbeit mit einem Fingertipp. Das Design folgt den NGG-Mathematik-Präsentationen (Rot #DC3545, Dunkel #1D1D1B, Grautöne, Kopf- und Fußzeile wie im Folienmaster).
+Web-App für das iPad auf dem Lehrerpult: Die Klasse erscheint als Sitzplan mit Fotos, und du erfasst die mündliche Mitarbeit mit einem Fingertipp. Das Design folgt der NGG-Präsentationsvorlage „Start-A-Klar“: Farbschema „NGG Klar“ (Rot #DC3545, Dunkelrot #A82834, Dunkel #1D1D1B, Grau #5A5A5A/#9B9B9B, Blaugrau #6E7C83, Zartrosa #FDF3F4), Schrift Segoe UI Light (auf dem iPad SF Light), rote Kopfzeile, Titel mit roter Akzentlinie, Fußzeile mit Haarlinie und Campus-Glienicke-Logo.
 
 | Geste auf dem Schülerbild | Bedeutung |
 |---|---|
