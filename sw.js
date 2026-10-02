@@ -1,5 +1,5 @@
 // Offline support: network first, cached copy when there is no connection.
-const CACHE = 'mitarbeit-v2';
+const CACHE = 'mitarbeit-v3';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {

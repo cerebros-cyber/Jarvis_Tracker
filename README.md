@@ -25,6 +25,7 @@ Web-App für das iPad auf dem Lehrerpult: Die Klasse erscheint als Sitzplan mit 
 - **Export** als CSV (für Excel/Numbers) oder „Tabelle kopieren“ zum Einfügen.
 - **Punkte** pro Ereignis einstellbar (Standard: Meldung 1, guter Beitrag 2, schwach −1).
 - **Datensicherung** als Datei exportieren und wieder importieren.
+- **Vollbild-Knopf** oben rechts: blendet die Fußzeile aus und schaltet, wo der Browser es erlaubt, in den Vollbildmodus. Die Gesten-Leiste und der Hinweis zur Beispielklasse lassen sich ausblenden, damit der Sitzplan möglichst groß ist.
 - Funktioniert **offline**. Der Bildschirm bleibt während der Stunde an.
 
 ## Schülerfotos hochladen

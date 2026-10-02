@@ -62,6 +62,7 @@
 }
 html { height: 100%; box-sizing: border-box; }
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   height: 100%; margin: 0; background: var(--bg); color: var(--ink);
   font-family: var(--font); font-size: 15px; line-height: 1.4;
@@ -115,7 +116,8 @@ button { cursor: pointer; }
 .foot b { color: var(--accent); font-weight: 700; }
 .foot .r { margin-left: auto; color: var(--faint); overflow: hidden; text-overflow: ellipsis; }
 
-main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px 16px 14px; }
+main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 8px 12px 8px; }
+main.scroll { padding: 12px 16px 14px; }
 main.scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
 /* Generic controls */
@@ -142,9 +144,10 @@ main.scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .banner.warn { border-color: var(--danger); color: var(--danger); }
 
 /* Lesson bar */
-.lessonbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-.lessoninfo { display: flex; flex-direction: column; min-width: 0; }
-.lessoninfo strong { font-size: 20px; font-family: var(--font-display); font-variant-numeric: tabular-nums; }
+.lessonbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.lessonbar .btn { padding: 6px 12px; }
+.lessoninfo { display: flex; flex-direction: row; align-items: baseline; gap: 10px; flex-wrap: wrap; min-width: 0; margin-right: 4px; }
+.lessoninfo strong { font-size: 18px; font-family: var(--font-display); font-variant-numeric: tabular-nums; }
 .lessoninfo span { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .legend { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
 .lg { font-size: 12px; padding: 4px 9px; border-radius: 4px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
@@ -152,14 +155,14 @@ main.scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .lg.m i { background: var(--m); } .lg.g i { background: var(--g); } .lg.n i { background: var(--n); }
 
 /* Seating plan */
-.plan { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.plan { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 4px; }
 .boardlabel {
   align-self: center; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
   border-top: 3px solid var(--line); padding-top: 3px; width: min(320px, 60%); text-align: center;
 }
 .plan.flip .boardlabel { order: -1; border-top: 0; border-bottom: 3px solid var(--line); padding: 0 0 3px; }
 .grid {
-  flex: 1; min-height: 0; display: grid; gap: clamp(4px, .8vw, 10px);
+  flex: 1; min-height: 0; display: grid; gap: clamp(4px, .6vw, 8px);
   grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
   grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
 }
@@ -175,13 +178,13 @@ main.scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; }
   transition: transform .12s ease-out, background-color .2s;
 }
 .seat .ph {
-  width: min(58cqh, 72cqw); aspect-ratio: 1; border-radius: 50%; overflow: hidden; flex: none;
+  width: min(64cqh, 80cqw); aspect-ratio: 1; border-radius: 50%; overflow: hidden; flex: none;
   display: grid; place-items: center; background: var(--av-bg);
   color: var(--av-ink); font-family: var(--font-display); font-weight: 700; font-size: min(20cqh, 26cqw);
 }
 .seat .ph img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; display: block; }
 .seat .nm {
-  font-weight: 600; font-size: clamp(11px, min(13cqh, 10cqw), 18px); line-height: 1.15;
+  font-weight: 600; font-size: clamp(11px, min(13cqh, 10cqw), 21px); line-height: 1.15;
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
 }
 .cnt { position: absolute; top: 5px; right: 5px; display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
@@ -267,7 +270,7 @@ td.pts { font-weight: 700; }
 /* Dialogs */
 dialog {
   border: 0; border-radius: 8px; padding: 0; background: var(--surface); color: var(--ink);
-  width: min(520px, calc(100vw - 32px)); max-height: calc(100% - 40px); box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  width: min(640px, calc(100vw - 32px)); max-height: calc(100% - 32px); box-shadow: 0 20px 60px rgba(0,0,0,.3);
 }
 dialog::backdrop { background: rgba(10, 20, 18, .45); }
 .dlg { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
@@ -284,8 +287,8 @@ textarea.input { min-height: 180px; resize: vertical; }
 .menuhead { display: flex; gap: 14px; align-items: center; }
 .menuhead .bigph { width: 64px; height: 64px; font-size: 22px; }
 .menugrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.menugrid button { border: 0; border-radius: 6px; padding: 14px 8px; font-weight: 700; color: var(--on); display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.menugrid button span { font-size: 22px; font-variant-numeric: tabular-nums; }
+.menugrid button { border: 0; border-radius: 6px; padding: 22px 8px; font-size: 17px; font-weight: 700; color: var(--on); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.menugrid button span { font-size: 28px; font-variant-numeric: tabular-nums; }
 .menugrid .m { background: var(--m); } .menugrid .g { background: var(--g); } .menugrid .n { background: var(--n); }
 .list { display: flex; flex-direction: column; gap: 6px; }
 .list .item { display: flex; gap: 8px; align-items: center; }
@@ -301,7 +304,10 @@ textarea.input { min-height: 180px; resize: vertical; }
 .empty-state { margin: auto; text-align: center; max-width: 420px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .empty-state h2 { margin: 0; font-family: var(--font-display); }
 .fileinput { display: none; }
-dialog.wide { width: min(760px, calc(100vw - 32px)); }
+dialog.wide { width: min(900px, calc(100vw - 32px)); }
+#app.focus .foot, #app.focus .boardlabel { display: none; }
+#app.focus .top { padding-top: 4px; }
+#app.focus .tabs button { padding-top: 4px; padding-bottom: 6px; }
 .assign { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; max-height: 52vh; overflow-y: auto; padding: 2px; }
 .arow { display: flex; gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 6px; padding: 8px; min-width: 0; }
 .arow.ok { border-color: var(--g); }
@@ -329,6 +335,9 @@ main.dropping { outline: 3px dashed var(--accent); outline-offset: -8px; }
       <button role="tab" data-view="stats">Auswertung</button>
       <button role="tab" data-view="edit">Sitzplan</button>
     </nav>
+    <button class="iconbtn" id="fullBtn" aria-label="Vollbild" title="Vollbild">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+    </button>
     <button class="iconbtn" id="settingsBtn" aria-label="Einstellungen">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
     </button>
@@ -658,17 +667,18 @@ function renderLesson(k) {
   const cnt = L ? counts(new Set([L.id])) : new Map();
   let total = 0; cnt.forEach(o => total += o.m + o.g + o.n);
   const last = S.undo.length ? D.events.find(e => e.id === S.undo[S.undo.length - 1]) : null;
-  const banner = k.sample ? `<div class="banner">Beispielklasse mit erfundenen Namen und Daten. Eigene Klassen legst du über das Klassen-Menü oben an; die Beispielklasse kannst du dort löschen.</div>` : '';
+  const banner = k.sample && !D.ui.hideSample ? `<div class="banner"><span>Beispielklasse mit erfundenen Namen und Daten. Eigene Klassen legst du über das Klassen-Menü oben an; die Beispielklasse kannst du dort löschen.</span><span class="spacer"></span><button class="btn small" type="button" data-act="hidesample">Ausblenden</button></div>` : '';
   const placed = k.students.some(s => s.r != null);
   return `${banner}
   <div class="lessonbar">
     <div class="lessoninfo">
       <strong>${L ? `Stunde seit ${fmtTime(L.start)} Uhr` : 'Bereit für die nächste Stunde'}</strong>
-      <span>${L ? `${total} ${total === 1 ? 'Eintrag' : 'Einträge'}${L.absent.length ? ` · ${L.absent.length} abwesend` : ''}` : 'Der erste Eintrag startet die Stunde.'}</span>
+      <span class="sub">${L ? `${total} ${total === 1 ? 'Eintrag' : 'Einträge'}${L.absent.length ? ` · ${L.absent.length} abwesend` : ''}` : 'Der erste Eintrag startet die Stunde.'}</span>
     </div>
     <button class="btn" type="button" data-act="undo" ${last ? '' : 'disabled'}>↶ Rückgängig</button>
     <button class="btn" type="button" data-act="newlesson" ${L ? '' : 'disabled'}>Stunde beenden</button>
-    <div class="legend">
+    <button class="btn" type="button" data-act="legend" aria-pressed="${D.ui.legend !== false}">${D.ui.legend !== false ? 'Gesten ausblenden' : 'Gesten'}</button>
+    <div class="legend" ${D.ui.legend !== false ? '' : 'hidden'}>
       <span class="lg m"><i></i>Tippen: Meldung</span>
       <span class="lg g"><i></i>2× tippen: guter Beitrag</span>
       <span class="lg n"><i></i>Wischen: schwach</span>
@@ -1238,6 +1248,27 @@ document.querySelector('.tabs').addEventListener('click', e => {
 });
 $('#settingsBtn').addEventListener('click', openSettings);
 
+/* Full screen: browser full screen where available, plus a compact layout (no footer) */
+const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+function setFocus(on) {
+  $('#app').classList.toggle('focus', on);
+  $('#fullBtn').setAttribute('aria-pressed', String(on));
+  $('#fullBtn').setAttribute('aria-label', on ? 'Vollbild beenden' : 'Vollbild');
+  D.ui.focus = on; save();
+}
+$('#fullBtn').addEventListener('click', async () => {
+  const on = !$('#app').classList.contains('focus');
+  setFocus(on);
+  const el = document.documentElement;
+  try {
+    if (on && !fsEl()) await (el.requestFullscreen ? el.requestFullscreen() : el.webkitRequestFullscreen && el.webkitRequestFullscreen());
+    else if (!on && fsEl()) await (document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen());
+  } catch (e) { /* not available (e.g. iPhone or home-screen app): compact layout still applies */ }
+});
+const onFsChange = () => { if (!fsEl() && D.ui.fsWasOn) setFocus(false); D.ui.fsWasOn = !!fsEl(); };
+document.addEventListener('fullscreenchange', onFsChange);
+document.addEventListener('webkitfullscreenchange', onFsChange);
+
 main.addEventListener('change', e => {
   if (e.target.id === 'fromD') { D.ui.from = e.target.value; save(); render(); }
   if (e.target.id === 'toD') { D.ui.to = e.target.value; save(); render(); }
@@ -1254,6 +1285,8 @@ main.addEventListener('click', async e => {
       break;
     }
     case 'goedit': S.view = 'edit'; render(); break;
+    case 'hidesample': D.ui.hideSample = true; save(); render(); break;
+    case 'legend': D.ui.legend = D.ui.legend === false; save(); render(); break;
     case 'rows': case 'cols': {
       const d = +a.dataset.d; const key = act;
       k[key] = Math.min(12, Math.max(1, k[key] + d));
@@ -1328,6 +1361,7 @@ main.addEventListener('click', async e => {
   }
   try { (await DB.all('photo:')).forEach((v, k) => PH.set(k.slice(6), v)); } catch (e) {}
   if (!cls() && D.classes[0]) D.ui.classId = D.classes[0].id;
+  if (D.ui.focus) setFocus(true);
   render();
   // refresh the lesson header once a minute (auto-new-lesson timeout)
   setInterval(() => { if (S.view === 'lesson' && !G && !P && !dlg.open) render(); }, 60000);
