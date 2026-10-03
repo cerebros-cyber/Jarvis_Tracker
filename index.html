@@ -14,6 +14,12 @@
 <title>Mitarbeit im Blick</title>
 <style>
   :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  /* Als installierte App zeichnet iPadOS 26 hinter Uhrzeit und App-Namen einen weichgezeichneten Schleier,
+     der nach unten ausläuft und die Kopfzeile unscharf macht. Abschalten lässt er sich nicht – daher bleibt
+     oben ein schmaler, einfarbiger Streifen frei, und die Kopfzeile liegt darunter im scharfen Bereich. */
+  @media (display-mode: standalone) {
+    :root { padding-top: calc(max(env(safe-area-inset-top, 0px), 24px) + 14px); }
+  }
 </style>
 </head>
 <body>
